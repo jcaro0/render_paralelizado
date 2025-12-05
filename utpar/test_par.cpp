@@ -17,6 +17,12 @@ struct RenderTestParams {
   std::string test_name;    // Nombre para el test (ej: "Scene1")
 };
 
+std::ostream &operator<<(std::ostream &os, const RenderTestParams &p) {
+  // O si quieres más detalle en caso de fallo:
+  return os << p.test_name << " (" << p.config_file << "," << p.scene_file
+            << ")";
+}
+
 // Test Fixture Parametrizado
 class PAR_RenderTest : public ::testing::TestWithParam<RenderTestParams> {
 protected:
@@ -149,17 +155,11 @@ INSTANTIATE_TEST_SUITE_P(
     RenderScenes, PAR_RenderTest,
     ::testing::Values(
         // Asumimos que los ficheros están en el directorio 'utpar'
-        RenderTestParams{"config1.txt", "scene1.txt", "s1.ppm", "Scene1"},
-        RenderTestParams{"config2.txt", "scene2.txt", "s2.ppm", "Scene2"},
-        RenderTestParams{"config3.txt", "scene3.txt", "s3.ppm", "Scene3"},
-        RenderTestParams{"config4.txt", "scene4.txt", "s4.ppm", "Scene4"},
-        RenderTestParams{"config1lite.txt", "scene1.txt", "s1lite.ppm",
-                         "Scene1lite"},
-        RenderTestParams{"config2lite.txt", "scene2.txt", "s2lite.ppm",
-                         "Scene2lite"},
-        RenderTestParams{"config3lite.txt", "scene3.txt", "s3lite.ppm",
-                         "Scene3lite"}),
-    // Lambda para dar nombres legibles a los tests (ej: RenderScenes/Scene1)
+        RenderTestParams{"config1.txt", "scene1.txt", "s1-par.ppm", "Scene1"},
+        RenderTestParams{"config2.txt", "scene2.txt", "s2-par.ppm", "Scene2"},
+        RenderTestParams{"config3.txt", "scene3.txt", "s3-par.ppm", "Scene3"},
+        RenderTestParams{"config4.txt", "scene4.txt", "s4-par.ppm", "Scene4"},
+        RenderTestParams{"config5.txt", "scene5.txt", "s5-par.ppm", "Scene5"}),
     [](::testing::TestParamInfo<RenderTestParams> const &info) {
       return info.param.test_name;
     });

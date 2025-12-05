@@ -12,7 +12,7 @@ cd $BUILD_DIR
 # -C $CONFIG       -> Especifica la configuración (ej: Release)
 # --output-on-failure -> Muestra la salida de la prueba SÓLO si falla
 echo "=== Ejecutando todas las pruebas con CTest ==="
-ctest -C $CONFIG --output-on-failure
+ctest -C $CONFIG -V
 
 # Si quieres ejecutar SÓLO las pruebas de utaos:
 # ctest -C $CONFIG -R utaos --output-on-failure

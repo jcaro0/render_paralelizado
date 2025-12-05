@@ -5,7 +5,6 @@
 #include "render_config.hpp"
 #include "vector.hpp"
 #include <numbers>
-#include <random>
 
 namespace render {
 
@@ -35,12 +34,6 @@ private:
   vector _origen_viewport; // Origen O (centro del píxel (0,0) de la ventana)
   vector _delta_x;         // Vector de desplazamiento horizontal por píxel (⃗∆x)
   vector _delta_y;         // Vector de desplazamiento vertical por píxel (⃗∆y)
-
-  // RNG propio de la cámara
-  std::mt19937_64
-      _rng_rayos; // Motor para generar números aleatorios para rayos
-  std::uniform_real_distribution<double>
-      _dist_rayos; // Distribución para generar números en [0.0, 1.0)
 };
 
 // Función helper (si no la tienes ya en otro sitio)

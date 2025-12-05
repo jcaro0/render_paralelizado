@@ -16,6 +16,7 @@
 #include <optional>
 #include <string>
 #include <tbb/blocked_range2d.h>
+#include <tbb/global_control.h>
 #include <tbb/parallel_for.h>
 
 namespace {
@@ -160,7 +161,7 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
             render::vector color_pixel(0.0, 0.0, 0.0);
 
             for (int s = 0; s < config.samples_per_pixel; ++s) {
-              // IMPORTANTE: color_rayo usa números aleatorios.
+              // color_rayo usa números aleatorios.
               // Asegúrate de que 'config.cpp' implementa TLS (Thread Local
               // Storage) para el generador de aleatorios, o esto fallará/será
               // incorrecto.
@@ -234,6 +235,10 @@ int main(int argc, char *argv[]) {
   ImageDimensions const dims{WIDTH, HEIGHT};
 
   render::Camara cam(config_data, dims.width, dims.height);
+
+  std::size_t num_threads = 8;
+  tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism,
+                                   num_threads);
 
   render::ImagenPAR const img =
       render_image(config_data, scene_data, cam, dims);
