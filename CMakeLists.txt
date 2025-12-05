@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 4.0)
 project(render_project LANGUAGES CXX)
 
+# Require C++20 for <numbers> and other modern features
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Fetch Microsoft GSL and GoogleTest
 include(FetchContent)
 
@@ -48,4 +53,4 @@ endif()
 add_subdirectory(common)
 add_subdirectory(par)
 add_subdirectory(utcommon)
-add_subdirectory(utaos)
+add_subdirectory(utpar)

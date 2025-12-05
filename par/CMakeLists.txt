@@ -1,14 +1,14 @@
-add_executable(render-aos)
-target_sources(render-aos 
+add_executable(render-par)
+target_sources(render-par 
     PRIVATE 
       src/main.cpp
-      src/imagen_aos.cpp
+      src/imagen_par.cpp
 )
 
-target_include_directories(render-aos PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_include_directories(render-par PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 
-target_link_libraries(render-aos PRIVATE Microsoft.GSL::GSL common)
+target_link_libraries(render-par PRIVATE Microsoft.GSL::GSL common TBB::tbb)
 
 file(GLOB TEST_DATA_FILES
   "${CMAKE_CURRENT_SOURCE_DIR}/../examples/*.txt"
@@ -16,9 +16,9 @@ file(GLOB TEST_DATA_FILES
 )
 
 add_custom_command(
-  TARGET render-aos POST_BUILD
+  TARGET render-par POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     ${TEST_DATA_FILES}
-    "$<TARGET_FILE_DIR:render-aos>"
-  COMMENT "Copiando ficheros de examples/ a $<TARGET_FILE_DIR:render-aos>"
+    "$<TARGET_FILE_DIR:render-par>"
+  COMMENT "Copiando ficheros de examples/ a $<TARGET_FILE_DIR:render-par>"
 )

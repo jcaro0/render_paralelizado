@@ -24,4 +24,7 @@ add_unit_test_target(
   LIBRARY_FILTER common
   COVERAGE_DIR coverage-common
   LIBRARY_TO_LINK common
+  INCLUDE_DIRS
+    ${CMAKE_SOURCE_DIR}/common/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
