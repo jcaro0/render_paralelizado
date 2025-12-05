@@ -8,6 +8,7 @@
 #include "render_config.hpp"
 #include "scene_config.hpp"
 #include "vector.hpp"
+#include <tbb>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -139,28 +140,42 @@ namespace {
     int const MAX_DEPTH                 = config.max_depth;
 
     render::ImagenAOS img(dims.width, dims.height);
+    
+    // Bucle principal (paralelizado)
 
-    for (int j = 0; j < dims.height; ++j) {
-      std::cerr << "\rScanlines remaining: " << (dims.height - 1 - j) << ' ' << std::flush;
-      for (int i = 0; i < dims.width; ++i) {
-        render::vector color_pixel(0.0, 0.0, 0.0);
-        for (int s = 0; s < config.samples_per_pixel; ++s) {
-          render::rayo const r = cam.get_rayo(j, i);
-          color_pixel          = color_pixel + color_rayo(r, scene, config, MAX_DEPTH);
+    tbb::parallel_for(tbb::blocked_range2d<int>(0, dims.height, 0, dims.width),
+      [&](const tbb::blocked_range2d<int>& r) {
+        // Iteramos sobre el sub-rango asignado a este hilo
+        for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
+          for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
+            
+            render::vector color_pixel(0.0, 0.0, 0.0);
+            
+            for (int s = 0; s < config.samples_per_pixel; ++s) {
+              // IMPORTANTE: color_rayo usa números aleatorios.
+              // Asegúrate de que 'config.cpp' implementa TLS (Thread Local Storage)
+              // para el generador de aleatorios, o esto fallará/será incorrecto.
+              render::rayo const r_cam = cam.get_rayo(j, i);
+              color_pixel = color_pixel + color_rayo(r_cam, scene, config, MAX_DEPTH);
+            }
+            
+            color_pixel = color_pixel * MUESTRAS_POR_PIXEL_INV;
+
+            color_pixel = render::vector(std::pow(color_pixel.get_x(), 1.0 / GAMMA),
+                                         std::pow(color_pixel.get_y(), 1.0 / GAMMA),
+                                         std::pow(color_pixel.get_z(), 1.0 / GAMMA));
+
+            int const ir = static_cast<int>(255.999 * color_pixel.get_x());
+            int const ig = static_cast<int>(255.999 * color_pixel.get_y());
+            int const ib = static_cast<int>(255.999 * color_pixel.get_z());
+
+            // img.store_pixel es seguro aquí porque cada hilo escribe en (i, j) únicos
+            img.store_pixel(i, j, render::PixelAOS(ir, ig, ib));
+          }
         }
-        color_pixel = color_pixel * MUESTRAS_POR_PIXEL_INV;
-
-        color_pixel = render::vector(std::pow(color_pixel.get_x(), 1.0 / GAMMA),
-                                     std::pow(color_pixel.get_y(), 1.0 / GAMMA),
-                                     std::pow(color_pixel.get_z(), 1.0 / GAMMA));
-
-        int const ir = static_cast<int>(255.999 * color_pixel.get_x());
-        int const ig = static_cast<int>(255.999 * color_pixel.get_y());
-        int const ib = static_cast<int>(255.999 * color_pixel.get_z());
-
-        img.store_pixel(i, j, render::PixelAOS(ir, ig, ib));
       }
-    }
+    ); // Fin parallel_for
+    
     std::cerr << "\nDone.\n";
     return img;
   }
