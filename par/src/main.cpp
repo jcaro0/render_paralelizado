@@ -8,7 +8,8 @@
 #include "render_config.hpp"
 #include "scene_config.hpp"
 #include "vector.hpp"
-#include <tbb>
+#include <tbb/blocked_range2d.h>
+#include <tbb/parallel_for.h>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -175,7 +176,7 @@ namespace {
         }
       }
     ); // Fin parallel_for
-    
+
     std::cerr << "\nDone.\n";
     return img;
   }
