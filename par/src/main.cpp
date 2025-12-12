@@ -138,6 +138,38 @@ bool parse_args(gsl::span<char const *const> args, FileNames &files) {
   files.config_file = args[1];
   files.scene_file = args[2];
   files.out_file = args[3];
+
+  // 1. Número de Hilos (num_threads)
+  if (args.size() > 4) {
+    try {
+      files.par_config.num_threads = std::stoi(args[4]);
+    } catch (const std::exception& e) {
+      std::cerr << "Error: Invalid num_threads argument. Must be an integer\n";
+      return false;
+    }
+  }
+
+  // 2. Partitioner String
+  if (args.size() > 5) {
+    // No necesita try-catch, es una simple asignación de string
+    files.par_config.partitioner = args[5];
+  }
+
+  // 3. Grain Size
+  if (args.size() > 6) {
+    try {
+      files.par_config.grain_size = std::stoi(args[6]);
+    } catch (const std::exception& e) {
+      std::cerr << "Error: Invalid grain_size argument. Must be an integer\n";
+      return false;
+    }
+  }
+  
+  // Condición Máxima
+  if (args.size() > 7) {
+    std::cerr << "Warning: Too many arguments, ignoring extras\n";
+  }
+
   return true;
 }
 
