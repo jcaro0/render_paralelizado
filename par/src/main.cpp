@@ -15,6 +15,8 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <stdexcept>
+#include <string_view>
 #include <tbb/blocked_range2d.h>
 #include <tbb/global_control.h>
 #include <tbb/parallel_for.h>
@@ -109,6 +111,13 @@ render::vector color_rayo(render::rayo const &r, render::SceneData const &scene,
   return background_color(r, config);
 }
 
+// Estructura para agrupar las opciones de paralelismo
+struct ParallelConfig {
+    int num_threads = 0;
+    std::string partitioner = "auto";
+    int grain_size = 0;
+};
+
 // Estructura para agrupar los nombres de fichero de entrada/salida
 struct FileNames {
   std::string config_file;
@@ -141,7 +150,9 @@ struct ImageDimensions {
 render::ImagenPAR render_image(render::RenderConfig const &config,
                                render::SceneData const &scene,
                                render::Camara &cam,
-                               ImageDimensions const &dims) {
+                               ImageDimensions const &dims,
+                               std::string const &partitioner,
+                               int grain_size) {
   double const MUESTRAS_POR_PIXEL_INV =
       1.0 / static_cast<double>(config.samples_per_pixel);
   double const GAMMA = config.gamma;
