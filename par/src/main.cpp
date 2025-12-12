@@ -279,12 +279,21 @@ int main(int argc, char *argv[]) {
 
   render::Camara cam(config_data, dims.width, dims.height);
 
-  std::size_t num_threads = 8;
-  tbb::global_control global_limit(tbb::global_control::max_allowed_parallelism,
-                                   num_threads);
+  std::optional<tbb::global_control> tbb_limit;
+  
+  if (files.par_config.num_threads > 0) {
+    // Si el usuario especificó hilos, aplicamos el límite
+    tbb_limit.emplace(tbb::global_control::max_allowed_parallelism, 
+                      files.par_config.num_threads);
+    std::cerr << "Using " << files.par_config.num_threads << " threads (TBB limited).\n";
+  } else {
+    // Si es 0 o no se especificó, TBB usará el default (hardware_concurrency)
+    std::cerr << "Using default TBB threads (hardware_concurrency).\n";
+  }
 
-  render::ImagenPAR const img =
-      render_image(config_data, scene_data, cam, dims);
+  render_image(config_data, scene_data, cam, dims,
+              files.par_config.partitioner, 
+              files.par_config.grain_size); 
 
   if (!save_image(img, files.out_file)) {
     return 1;
