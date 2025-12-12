@@ -123,54 +123,47 @@ struct FileNames {
   std::string config_file;
   std::string scene_file;
   std::string out_file;
+  ParallelConfig par_config;
 };
 
 bool parse_args(gsl::span<char const *const> args, FileNames &files) {
-  if (args.size() != 4) {
-    std::string program_name = "program";
-    if (!args.empty()) {
-      program_name = args[0];
+    // Deben existir al menos 4 argumentos
+    if (args.size() < 4) {
+        std::cerr << "Uso: ./render-par <render.cfg> <scene.cfg> <out.ppm> [threads] [partitioner] [grain]\n";
+        return false;
     }
-    std::cerr << "Error: Usage: " << program_name
-              << " <render-config-file> <scene-config-file> <output-file>\n";
-    return false;
-  }
-  files.config_file = args[1];
-  files.scene_file = args[2];
-  files.out_file = args[3];
 
-  // 1. Número de Hilos (num_threads)
-  if (args.size() > 4) {
-    try {
-      files.par_config.num_threads = std::stoi(args[4]);
-    } catch (const std::exception& e) {
-      std::cerr << "Error: Invalid num_threads argument. Must be an integer\n";
-      return false;
+    // Argumentos obligatorios
+    files.config_file = args[1];
+    files.scene_file = args[2];
+    files.out_file   = args[3];
+
+    //Número de hilos
+    if (args.size() >= 5) {
+        try {
+            files.par_config.num_threads = std::stoi(args[4]);
+        } catch (...) {
+            std::cerr << "Error: num_threads debe ser un número entero\n";
+            return false;
+        }
     }
-  }
 
-  // 2. Partitioner String
-  if (args.size() > 5) {
-    // No necesita try-catch, es una simple asignación de string
-    files.par_config.partitioner = args[5];
-  }
-
-  // 3. Grain Size
-  if (args.size() > 6) {
-    try {
-      files.par_config.grain_size = std::stoi(args[6]);
-    } catch (const std::exception& e) {
-      std::cerr << "Error: Invalid grain_size argument. Must be an integer\n";
-      return false;
+    //Particionador
+    if (args.size() >= 6) {
+        files.par_config.partitioner = args[5]; // simple | auto | static
     }
-  }
-  
-  // Condición Máxima
-  if (args.size() > 7) {
-    std::cerr << "Warning: Too many arguments, ignoring extras\n";
-  }
 
-  return true;
+    // Grain size
+    if (args.size() >= 7) {
+        try {
+            files.par_config.grain_size = std::stoi(args[6]);
+        } catch (...) {
+            std::cerr << "Error: grain_size debe ser un número entero\n";
+            return false;
+        }
+    }
+
+    return true;
 }
 
 // Estructura que agrupa la anchura con la altura
@@ -195,7 +188,7 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
   // Bucle principal (paralelizado)
 
   tbb::parallel_for(
-      tbb::blocked_range2d<int>(0, dims.height, 0, dims.width),
+      tbb::blocked_range2d<int>(0, dims.height, grain_size, 0, dims.width, grain_size),
       [&](const tbb::blocked_range2d<int> &r) {
         // Iteramos sobre el sub-rango asignado a este hilo
         for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
@@ -291,6 +284,14 @@ int main(int argc, char *argv[]) {
     std::cerr << "Using default TBB threads (hardware_concurrency).\n";
   }
 
+// Esto es para la medición de tiempo para la selección de configuración
+auto end = std::chrono::high_resolution_clock::now();
+std::cout << "TIME=" 
+          << std::chrono::duration<double>(end - start).count()
+          << " seconds\n";
+
+// El render_image se guarda
+render::ImagenPAR const img =
   render_image(config_data, scene_data, cam, dims,
               files.par_config.partitioner, 
               files.par_config.grain_size); 
