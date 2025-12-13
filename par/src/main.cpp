@@ -15,6 +15,7 @@
 #include <limits>
 #include <optional>
 #include <string>
+#include <chrono>
 #include <stdexcept>
 #include <string_view>
 #include <tbb/blocked_range2d.h>
@@ -187,9 +188,10 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
 
   // Bucle principal (paralelizado)
 
-  tbb::parallel_for(
-      tbb::blocked_range2d<int>(0, dims.height, grain_size, 0, dims.width, grain_size),
-      [&](const tbb::blocked_range2d<int> &r) {
+  // tbb::parallel_for(
+      // tbb::blocked_range2d<int>(0, dims.height, grain_size, 0, dims.width, grain_size),
+
+    auto body = [&](const tbb::blocked_range2d<int> &r) {
         // Iteramos sobre el sub-rango asignado a este hilo
         for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
           for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
@@ -222,7 +224,7 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
             img.store_pixel(i, j, render::PixelPAR(ir, ig, ib));
           }
         }
-      }); // Fin parallel_for
+      }; // Fin parallel_for
 
   std::cerr << "\nDone.\n";
   return img;
@@ -286,9 +288,9 @@ int main(int argc, char *argv[]) {
 
 // Esto es para la medición de tiempo para la selección de configuración
 auto end = std::chrono::high_resolution_clock::now();
-std::cout << "TIME=" 
-          << std::chrono::duration<double>(end - start).count()
-          << " seconds\n";
+double seconds =
+    std::chrono::duration<double>(end - start).count();
+std::cout << "Tiempo de ejecución: " << seconds << " segundos\n";
 
 // El render_image se guarda
 render::ImagenPAR const img =
