@@ -226,6 +226,28 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
         }
       }; // Fin parallel_for
 
+// Configuración del grain size y seleccionador del partitioner 
+int g = (grain_size > 0) ? grain_size : 1;
+
+if (partitioner == "simple") {
+    tbb::parallel_for(
+        tbb::blocked_range2d<int>(0, dims.height, g, 0, dims.width, g), body,
+        tbb::simple_partitioner{}
+    );
+}
+else if (partitioner == "static") {
+    tbb::parallel_for(
+        tbb::blocked_range2d<int>(0, dims.height, g, 0, dims.width, g), body,
+        tbb::static_partitioner{}
+    );
+}
+else { // auto (default)
+    tbb::parallel_for(
+        tbb::blocked_range2d<int>(0, dims.height, g, 0, dims.width, g), body,
+        tbb::auto_partitioner{}
+    );
+}
+
   std::cerr << "\nDone.\n";
   return img;
 }
