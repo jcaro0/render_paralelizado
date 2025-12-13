@@ -1,5 +1,5 @@
 #!/bin/bash
-EXECUTABLE_PATH="./ejecutables_avignon/out/render-par"
+EXECUTABLE_PATH="./ejecutables_avignon/render-par"
 RENDER_CFG=render.cfg
 SCENE_CFG=scene.cfg
 OUT=out.ppm
@@ -15,7 +15,7 @@ for t in "${THREADS[@]}"; do
     for g in "${GRAINS[@]}"; do
       echo "Running: threads=$t partitioner=$p grain=$g"
 
-      EXECUTABLE_PATH $RENDER_CFG $SCENE_CFG $OUT $t $p $g 2>&1 \
+      $EXECUTABLE_PATH $RENDER_CFG $SCENE_CFG $OUT $t $p $g 2>&1 \
         | grep "Tiempo de ejecución" \
         | awk -v t=$t -v p=$p -v g=$g \
           '{print t "," p "," g "," $NF}'
