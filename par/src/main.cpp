@@ -309,7 +309,7 @@ int main(int argc, char *argv[]) {
   }
 
 // Esto es para la medición de tiempo para la selección de configuración
-// Declaramos el tiempo de inicio
+// Declaramos el tiempo de inicio para su medición
 auto start = std::chrono::high_resolution_clock::now();
 
 // El render_image se guarda
@@ -318,13 +318,11 @@ render::ImagenPAR const img =
               files.par_config.partitioner, 
               files.par_config.grain_size);
 
-// Declaramos el tiempo final
+// Declaramos el tiempo final para terminar la medición
 auto end = std::chrono::high_resolution_clock::now();
-
 double seconds =
     std::chrono::duration<double>(end - start).count();
-
-std::cout << "Tiempo de ejecución: " << seconds << " segundos\n";
+    std::cout << "Tiempo de ejecución: " << seconds << " segundos\n";
 
   if (!save_image(img, files.out_file)) {
     return 1;
