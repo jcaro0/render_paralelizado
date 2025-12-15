@@ -1,4 +1,7 @@
 #!/bin/bash
+set -Eeuo pipefail
+export LD_LIBRARY_PATH="/opt/gcc-14/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
+
 EXECUTABLE_PATH="./ejecutables_avignon/render-par"
 RENDER_CFG="./examples/config4.txt"
 SCENE_CFG="./examples/scene4.txt"
