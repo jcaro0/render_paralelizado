@@ -1,7 +1,7 @@
 #!/bin/bash
 EXECUTABLE_PATH="./ejecutables_avignon/render-par"
-RENDER_CFG="./examples/config5.txt"
-SCENE_CFG="./examples/scene5.txt"
+RENDER_CFG="./examples/config4.txt"
+SCENE_CFG="./examples/scene4.txt"
 OUT="out.ppm"
 
 THREADS=(1 2 4 8 16 32 64 128 256)
