@@ -8,15 +8,15 @@
 #include "render_config.hpp"
 #include "scene_config.hpp"
 #include "vector.hpp"
+#include <chrono>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
 #include <limits>
 #include <optional>
-#include <string>
-#include <chrono>
 #include <stdexcept>
+#include <string>
 #include <string_view>
 #include <tbb/blocked_range2d.h>
 #include <tbb/global_control.h>
@@ -114,9 +114,9 @@ render::vector color_rayo(render::rayo const &r, render::SceneData const &scene,
 
 // Estructura para agrupar las opciones de paralelismo
 struct ParallelConfig {
-    int num_threads = 0;
-    std::string partitioner = "auto";
-    int grain_size = 0;
+  int num_threads = 0;
+  std::string partitioner = "auto";
+  int grain_size = 0;
 };
 
 // Estructura para agrupar los nombres de fichero de entrada/salida
@@ -128,43 +128,44 @@ struct FileNames {
 };
 
 bool parse_args(gsl::span<char const *const> args, FileNames &files) {
-    // Deben existir al menos 4 argumentos
-    if (args.size() < 4) {
-        std::cerr << "Uso: ./render-par <render.cfg> <scene.cfg> <out.ppm> [threads] [partitioner] [grain]\n";
-        return false;
+  // Deben existir al menos 4 argumentos
+  if (args.size() < 4) {
+    std::cerr << "Uso: ./render-par <render.cfg> <scene.cfg> <out.ppm> "
+                 "[threads] [partitioner] [grain]\n";
+    return false;
+  }
+
+  // Argumentos obligatorios
+  files.config_file = args[1];
+  files.scene_file = args[2];
+  files.out_file = args[3];
+
+  // Número de hilos
+  if (args.size() >= 5) {
+    try {
+      files.par_config.num_threads = std::stoi(args[4]);
+    } catch (...) {
+      std::cerr << "Error: num_threads debe ser un número entero\n";
+      return false;
     }
+  }
 
-    // Argumentos obligatorios
-    files.config_file = args[1];
-    files.scene_file = args[2];
-    files.out_file   = args[3];
+  // Particionador
+  if (args.size() >= 6) {
+    files.par_config.partitioner = args[5]; // simple | auto | static
+  }
 
-    //Número de hilos
-    if (args.size() >= 5) {
-        try {
-            files.par_config.num_threads = std::stoi(args[4]);
-        } catch (...) {
-            std::cerr << "Error: num_threads debe ser un número entero\n";
-            return false;
-        }
+  // Grain size
+  if (args.size() >= 7) {
+    try {
+      files.par_config.grain_size = std::stoi(args[6]);
+    } catch (...) {
+      std::cerr << "Error: grain_size debe ser un número entero\n";
+      return false;
     }
+  }
 
-    //Particionador
-    if (args.size() >= 6) {
-        files.par_config.partitioner = args[5]; // simple | auto | static
-    }
-
-    // Grain size
-    if (args.size() >= 7) {
-        try {
-            files.par_config.grain_size = std::stoi(args[6]);
-        } catch (...) {
-            std::cerr << "Error: grain_size debe ser un número entero\n";
-            return false;
-        }
-    }
-
-    return true;
+  return true;
 }
 
 // Estructura que agrupa la anchura con la altura
@@ -175,10 +176,8 @@ struct ImageDimensions {
 
 render::ImagenPAR render_image(render::RenderConfig const &config,
                                render::SceneData const &scene,
-                               render::Camara &cam,
-                               ImageDimensions const &dims,
-                               std::string const &partitioner,
-                               int grain_size) {
+                               render::Camara &cam, ImageDimensions const &dims,
+                               std::string const &partitioner, int grain_size) {
   double const MUESTRAS_POR_PIXEL_INV =
       1.0 / static_cast<double>(config.samples_per_pixel);
   double const GAMMA = config.gamma;
@@ -189,64 +188,63 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
   // Bucle principal (paralelizado)
 
   // tbb::parallel_for(
-      // tbb::blocked_range2d<int>(0, dims.height, grain_size, 0, dims.width, grain_size),
+  // tbb::blocked_range2d<int>(0, dims.height, grain_size, 0, dims.width,
+  // grain_size),
 
-    auto body = [&](const tbb::blocked_range2d<int> &r) {
-        // Iteramos sobre el sub-rango asignado a este hilo
-        for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
-          for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
+  auto body = [&](const tbb::blocked_range2d<int> &r) {
+    // Iteramos sobre el sub-rango asignado a este hilo
+    for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
+      for (int i = r.cols().begin(); i != r.cols().end(); ++i) {
 
-            render::vector color_pixel(0.0, 0.0, 0.0);
+        render::vector color_pixel(0.0, 0.0, 0.0);
 
-            for (int s = 0; s < config.samples_per_pixel; ++s) {
-              // color_rayo usa números aleatorios.
-              // Asegúrate de que 'config.cpp' implementa TLS (Thread Local
-              // Storage) para el generador de aleatorios, o esto fallará/será
-              // incorrecto.
-              render::rayo const r_cam = cam.get_rayo(j, i);
-              color_pixel =
-                  color_pixel + color_rayo(r_cam, scene, config, MAX_DEPTH);
-            }
-
-            color_pixel = color_pixel * MUESTRAS_POR_PIXEL_INV;
-
-            color_pixel =
-                render::vector(std::pow(color_pixel.get_x(), 1.0 / GAMMA),
-                               std::pow(color_pixel.get_y(), 1.0 / GAMMA),
-                               std::pow(color_pixel.get_z(), 1.0 / GAMMA));
-
-            int const ir = static_cast<int>(255.999 * color_pixel.get_x());
-            int const ig = static_cast<int>(255.999 * color_pixel.get_y());
-            int const ib = static_cast<int>(255.999 * color_pixel.get_z());
-
-            // img.store_pixel es seguro aquí porque cada hilo escribe en (i, j)
-            // únicos
-            img.store_pixel(i, j, render::PixelPAR(ir, ig, ib));
-          }
+        for (int s = 0; s < config.samples_per_pixel; ++s) {
+          // color_rayo usa números aleatorios.
+          // Asegúrate de que 'config.cpp' implementa TLS (Thread Local
+          // Storage) para el generador de aleatorios, o esto fallará/será
+          // incorrecto.
+          render::rayo const r_cam = cam.get_rayo(j, i);
+          color_pixel =
+              color_pixel + color_rayo(r_cam, scene, config, MAX_DEPTH);
         }
-      }; // Fin parallel_for
 
-// Configuración del grain size y seleccionador del partitioner 
-int g = (grain_size > 0) ? grain_size : 1;
+        color_pixel = color_pixel * MUESTRAS_POR_PIXEL_INV;
 
-if (partitioner == "simple") {
-    tbb::parallel_for(
-        tbb::blocked_range2d<int>(0, dims.height, g, 0, dims.width, g), body,
-        tbb::simple_partitioner{}
-    );
-}
-else if (partitioner == "static") {
-    tbb::parallel_for(
-        tbb::blocked_range2d<int>(0, dims.height, g, 0, dims.width, g), body,
-        tbb::static_partitioner{}
-    );
-}
-else { // auto (default)
-    tbb::parallel_for(
-        tbb::blocked_range2d<int>(0, dims.height, g, 0, dims.width, g), body,
-        tbb::auto_partitioner{}
-    );
-}
+        color_pixel =
+            render::vector(std::pow(color_pixel.get_x(), 1.0 / GAMMA),
+                           std::pow(color_pixel.get_y(), 1.0 / GAMMA),
+                           std::pow(color_pixel.get_z(), 1.0 / GAMMA));
+
+        int const ir = static_cast<int>(255.999 * color_pixel.get_x());
+        int const ig = static_cast<int>(255.999 * color_pixel.get_y());
+        int const ib = static_cast<int>(255.999 * color_pixel.get_z());
+
+        // img.store_pixel es seguro aquí porque cada hilo escribe en (i, j)
+        // únicos
+        img.store_pixel(i, j, render::PixelPAR(ir, ig, ib));
+      }
+    }
+  }; // Fin parallel_for
+
+  // Configuración del grain size y seleccionador del partitioner
+  int g = (grain_size > 0) ? grain_size : 1;
+
+  // Creamos una variable auxiliar casteada para no repetir el cast
+  auto g_size = static_cast<std::size_t>(g);
+
+  if (partitioner == "simple") {
+    tbb::parallel_for(tbb::blocked_range2d<int>(0, dims.height, g_size, 0,
+                                                dims.width, g_size),
+                      body, tbb::simple_partitioner{});
+  } else if (partitioner == "static") {
+    tbb::parallel_for(tbb::blocked_range2d<int>(0, dims.height, g_size, 0,
+                                                dims.width, g_size),
+                      body, tbb::static_partitioner{});
+  } else { // auto (default)
+    tbb::parallel_for(tbb::blocked_range2d<int>(0, dims.height, g_size, 0,
+                                                dims.width, g_size),
+                      body, tbb::auto_partitioner{});
+  }
 
   std::cerr << "\nDone.\n";
   return img;
@@ -297,32 +295,31 @@ int main(int argc, char *argv[]) {
   render::Camara cam(config_data, dims.width, dims.height);
 
   std::optional<tbb::global_control> tbb_limit;
-  
+
   if (files.par_config.num_threads > 0) {
     // Si el usuario especificó hilos, aplicamos el límite
-    tbb_limit.emplace(tbb::global_control::max_allowed_parallelism, 
+    tbb_limit.emplace(tbb::global_control::max_allowed_parallelism,
                       files.par_config.num_threads);
-    std::cerr << "Using " << files.par_config.num_threads << " threads (TBB limited).\n";
+    std::cerr << "Using " << files.par_config.num_threads
+              << " threads (TBB limited).\n";
   } else {
     // Si es 0 o no se especificó, TBB usará el default (hardware_concurrency)
     std::cerr << "Using default TBB threads (hardware_concurrency).\n";
   }
 
-// Esto es para la medición de tiempo para la selección de configuración
-// Declaramos el tiempo de inicio para su medición
-auto start = std::chrono::high_resolution_clock::now();
+  // Esto es para la medición de tiempo para la selección de configuración
+  // Declaramos el tiempo de inicio para su medición
+  auto start = std::chrono::high_resolution_clock::now();
 
-// El render_image se guarda
-render::ImagenPAR const img =
-  render_image(config_data, scene_data, cam, dims,
-              files.par_config.partitioner, 
-              files.par_config.grain_size);
+  // El render_image se guarda
+  render::ImagenPAR const img =
+      render_image(config_data, scene_data, cam, dims,
+                   files.par_config.partitioner, files.par_config.grain_size);
 
-// Declaramos el tiempo final para terminar la medición
-auto end = std::chrono::high_resolution_clock::now();
-double seconds =
-    std::chrono::duration<double>(end - start).count();
-    std::cout << "Tiempo de ejecución: " << seconds << " segundos\n";
+  // Declaramos el tiempo final para terminar la medición
+  auto end = std::chrono::high_resolution_clock::now();
+  double seconds = std::chrono::duration<double>(end - start).count();
+  std::cout << "Tiempo de ejecución: " << seconds << " segundos\n";
 
   if (!save_image(img, files.out_file)) {
     return 1;
