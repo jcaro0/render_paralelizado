@@ -1,12 +1,12 @@
 #!/bin/bash
-EXECUTABLE_PATH="$HOME/proyecto_final/ejecutables_avignon/render-par"
-RENDER_CFG="$HOME/proyecto_final/render.cfg"
-SCENE_CFG="$HOME/proyecto_final/scene.cfg"
+EXECUTABLE_PATH="./ejecutables_avignon/render-par"
+RENDER_CFG="./examples/config5.txt"
+SCENE_CFG="./examples/scene5.txt"
 OUT="out.ppm"
 
-THREADS=(1 2 4 8 16)
+THREADS=(1 2 4 8 16 32 64 128 256)
 PARTITIONERS=("auto" "static" "simple")
-GRAINS=(1 4 16 64)
+GRAINS=(1 4 16 64 256 1024)
 
 echo "threads,partitioner,grain,time"
 
