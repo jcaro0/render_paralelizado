@@ -9,7 +9,7 @@ RENDER_CFG="./examples/config4.txt"
 SCENE_CFG="./examples/scene4.txt"
 OUT="out.ppm"
 
-THREADS=(2 4 16)
+THREADS=(4 16)
 PARTITIONERS=("auto" "static" "simple")
 GRAINS=(1 4 16 64 256 1024)
 
