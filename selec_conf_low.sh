@@ -18,7 +18,7 @@ for t in "${THREADS[@]}"; do
     for g in "${GRAINS[@]}"; do
       "$EXECUTABLE_PATH" "$RENDER_CFG" "$SCENE_CFG" "$OUT" $t $p $g 2>&1 \
         | grep "Tiempo de ejecución" \
-        | awk -v t=$t -v p=$p -v g=$g '{print t "," p "," g "," $NF}'
+        | awk -v t=$t -v p=$p -v g=$g '{print t "," p "," g "," $(NF-1)}'
     done
   done
 done
