@@ -114,9 +114,9 @@ render::vector color_rayo(render::rayo const &r, render::SceneData const &scene,
 
 // Estructura para agrupar las opciones de paralelismo
 struct ParallelConfig {
-  int num_threads = 64;
+  int num_threads = 256;
   std::string partitioner = "auto";
-  int grain_size = 16;
+  int grain_size = 64;
 };
 
 // Estructura para agrupar los nombres de fichero de entrada/salida
