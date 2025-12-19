@@ -114,9 +114,9 @@ render::vector color_rayo(render::rayo const &r, render::SceneData const &scene,
 
 // Estructura para agrupar las opciones de paralelismo
 struct ParallelConfig {
-  int num_threads = 0;
+  int num_threads = 64;
   std::string partitioner = "auto";
-  int grain_size = 0;
+  int grain_size = 16;
 };
 
 // Estructura para agrupar los nombres de fichero de entrada/salida
@@ -186,11 +186,6 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
   render::ImagenPAR img(dims.width, dims.height);
 
   // Bucle principal (paralelizado)
-
-  // tbb::parallel_for(
-  // tbb::blocked_range2d<int>(0, dims.height, grain_size, 0, dims.width,
-  // grain_size),
-
   auto body = [&](const tbb::blocked_range2d<int> &r) {
     // Iteramos sobre el sub-rango asignado a este hilo
     for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
