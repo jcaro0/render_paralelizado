@@ -182,7 +182,6 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
       1.0 / static_cast<double>(config.samples_per_pixel);
   double const GAMMA = config.gamma;
   int const MAX_DEPTH = config.max_depth;
-
   render::ImagenPAR img(dims.width, dims.height);
 
   // Bucle principal (paralelizado)
@@ -297,9 +296,6 @@ int main(int argc, char *argv[]) {
                       files.par_config.num_threads);
     std::cerr << "Using " << files.par_config.num_threads
               << " threads (TBB limited).\n";
-  } else {
-    // Si es 0 o no se especificó, TBB usará el default (hardware_concurrency)
-    std::cerr << "Using default TBB threads (hardware_concurrency).\n";
   }
 
   // Esto es para la medición de tiempo para la selección de configuración
