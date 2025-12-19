@@ -296,6 +296,9 @@ int main(int argc, char *argv[]) {
                       files.par_config.num_threads);
     std::cerr << "Using " << files.par_config.num_threads
               << " threads (TBB limited).\n";
+  } else {
+    std::cerr << "Using default number of threads.\n";
+    return 1;
   }
 
   // Esto es para la medición de tiempo para la selección de configuración
