@@ -114,9 +114,9 @@ render::vector color_rayo(render::rayo const &r, render::SceneData const &scene,
 
 // Estructura para agrupar las opciones de paralelismo
 struct ParallelConfig {
-  int num_threads = 0;
+  int num_threads = 256;
   std::string partitioner = "auto";
-  int grain_size = 0;
+  int grain_size = 64;
 };
 
 // Estructura para agrupar los nombres de fichero de entrada/salida
@@ -182,15 +182,9 @@ render::ImagenPAR render_image(render::RenderConfig const &config,
       1.0 / static_cast<double>(config.samples_per_pixel);
   double const GAMMA = config.gamma;
   int const MAX_DEPTH = config.max_depth;
-
   render::ImagenPAR img(dims.width, dims.height);
 
   // Bucle principal (paralelizado)
-
-  // tbb::parallel_for(
-  // tbb::blocked_range2d<int>(0, dims.height, grain_size, 0, dims.width,
-  // grain_size),
-
   auto body = [&](const tbb::blocked_range2d<int> &r) {
     // Iteramos sobre el sub-rango asignado a este hilo
     for (int j = r.rows().begin(); j != r.rows().end(); ++j) {
@@ -303,23 +297,25 @@ int main(int argc, char *argv[]) {
     std::cerr << "Using " << files.par_config.num_threads
               << " threads (TBB limited).\n";
   } else {
-    // Si es 0 o no se especificó, TBB usará el default (hardware_concurrency)
-    std::cerr << "Using default TBB threads (hardware_concurrency).\n";
+    std::cerr << "Using default number of threads.\n";
+    return 1;
   }
 
   // Esto es para la medición de tiempo para la selección de configuración
-  // Declaramos el tiempo de inicio para su medición
+  // Declaramos el tiempo de inicio
   auto start = std::chrono::high_resolution_clock::now();
 
-  // El render_image se guarda
   render::ImagenPAR const img =
       render_image(config_data, scene_data, cam, dims,
                    files.par_config.partitioner, files.par_config.grain_size);
 
-  // Declaramos el tiempo final para terminar la medición
+  // Declaramos el tiempo final
   auto end = std::chrono::high_resolution_clock::now();
+
+  // CALCULAMOS EL TIEMPO
   double seconds = std::chrono::duration<double>(end - start).count();
-  std::cout << "Tiempo de ejecución: " << seconds << " segundos\n";
+
+  std::cout << "Time: " << seconds << "\n";
 
   if (!save_image(img, files.out_file)) {
     return 1;
