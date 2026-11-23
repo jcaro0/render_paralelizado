@@ -10,7 +10,7 @@
       "name": "default",
       "displayName": "Default",
       "description": "Default build",
-      "generator": "Ninja Multi-Config",
+      "generator": "Unix Makefiles",
       "binaryDir": "${sourceDir}/out/build/${presetName}",
       "installDir": "${sourceDir}/out/bin/${presetName}",
       "cacheVariables": {

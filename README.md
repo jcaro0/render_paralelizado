@@ -18,12 +18,12 @@ GitHub.
 ./build.sh
 ```
 
-El ejecutable queda en `out/build/default/par/Release/render-par`.
+El ejecutable queda en `out/build/default/par/render-par`.
 
 ## Ejecutar
 
 ```bash
-./out/build/default/par/Release/render-par \
+./out/build/default/par/render-par \
   examples/config1.txt examples/scene1.txt out/scene1.ppm
 ```
 
@@ -31,7 +31,7 @@ Los argumentos opcionales son el número de hilos, el particionador (`simple`,
 `auto` o `static`) y el tamaño de grano:
 
 ```bash
-./out/build/default/par/Release/render-par \
+./out/build/default/par/render-par \
   examples/config1.txt examples/scene1.txt out/scene1.ppm 16 auto 64
 ```
 

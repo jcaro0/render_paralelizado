@@ -1,7 +1,5 @@
-﻿#!/bin/bash
+#!/bin/bash
 set -Eeuo pipefail
-export LD_LIBRARY_PATH="/opt/gcc-14/lib64${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
-set -e
 BUILD_DIR="./out/build/default"
 CONFIG="Release"
 
