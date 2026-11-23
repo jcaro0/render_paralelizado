@@ -3,3 +3,9 @@ build/
 cmake-build*/
 render-par
 .vscode
+.env
+.venv
+.devcontainer
+ejecutables_avignon
+LICENSE
+es-proj2.pdf

@@ -1,5 +1,42 @@
-[![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-22041afd0340ce965d47ae6ef1cefeee28c7c493a6346c4f15d667ab976d596c.svg)](https://classroom.github.com/a/y54ywNyp)
-# Template for render-2025
+# Render paralelo
 
-This repository contains a template for the project assignment in the Computer
-Architecture course at Universidad Carlos III de Madrid.
+Proyecto C++20 para renderizar escenas en formato PPM usando Intel oneTBB.
+
+## Requisitos
+
+- CMake 4.0 o superior
+- compilador C++20 (GCC o Clang)
+- Ninja
+- Intel oneTBB instalado y disponible para CMake (`TBBConfig.cmake`)
+
+Durante la configuración, CMake descarga Microsoft GSL y GoogleTest desde
+GitHub.
+
+## Compilar
+
+```bash
+./build.sh
+```
+
+El ejecutable queda en `out/build/default/par/Release/render-par`.
+
+## Ejecutar
+
+```bash
+./out/build/default/par/Release/render-par \
+  examples/config1.txt examples/scene1.txt out/scene1.ppm
+```
+
+Los argumentos opcionales son el número de hilos, el particionador (`simple`,
+`auto` o `static`) y el tamaño de grano:
+
+```bash
+./out/build/default/par/Release/render-par \
+  examples/config1.txt examples/scene1.txt out/scene1.ppm 16 auto 64
+```
+
+## Tests
+
+```bash
+./utest.sh
+```
